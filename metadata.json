@@ -1,0 +1,6 @@
+{
+  "name": "Hotaru - エモーショナル・ライトシューティング",
+  "description": "暗闇を照らし、未来の街を復元する1分間のエモーショナル・縦スクロールシューティング。Gemini APIが紡ぐ30年後の未来都市レポート。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

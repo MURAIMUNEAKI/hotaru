@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-serif: 'Shippori Mincho', serif;
+    --font-sans: 'Zen Kaku Gothic New', 'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #030712;
+    color: #f3f4f6;
+    overflow-x: hidden;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+.font-serif-title {
+  font-family: 'Shippori Mincho', serif;
+}
+
+.font-sans-ui {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+}
+
+.glow-hotaru {
+  filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.8)) drop-shadow(0 0 24px rgba(74, 222, 128, 0.5));
+}
+
+.glow-cyan {
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.7));
+}
+
+.glow-card {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar for future report */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(234, 179, 8, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(234, 179, 8, 0.6);
+}
