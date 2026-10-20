@@ -56,7 +56,7 @@ export class GameEngine {
 
   // Enemy Flame Spawning
   private enemyFlames: EnemyFlame[] = [];
-  private flameSpawnTimer: number = 2.0;
+  private flameSpawnTimer: number = 0.6;
 
   // Player State
   private player: PlayerState = {
@@ -175,7 +175,7 @@ export class GameEngine {
     this.isMovingLeft = false;
     this.isMovingRight = false;
     this.isManualShooting = false;
-    this.flameSpawnTimer = 2.0;
+    this.flameSpawnTimer = 0.6;
 
     const optY = this.getOptimalPlayerY();
     this.player.x = this.width / 2;
@@ -391,12 +391,40 @@ export class GameEngine {
     }
 
     // 7. Spawn Enemy Flames (Descending straight and diagonally from TOP)
+    // "敵の攻撃がもう少し多く。"
     this.flameSpawnTimer -= dt;
     if (this.flameSpawnTimer <= 0) {
-      this.spawnEnemyFlame();
       const progress = (this.totalDuration - this.timeRemaining) / this.totalDuration;
-      // Flame interval gets slightly tighter as time progresses
-      this.flameSpawnTimer = Math.max(0.85, 1.8 - progress * 0.95) + Math.random() * 0.35;
+      // Faster, more intense spawn intervals: ~0.65s down to ~0.28s as flight advances!
+      this.flameSpawnTimer = Math.max(0.26, 0.68 - progress * 0.42) + Math.random() * 0.15;
+
+      // Multi-flame attack waves: aimed single, dual converging pincer, triple/quad spread, or cross-volley!
+      const patternRoll = Math.random();
+      if (patternRoll < 0.28) {
+        // Targeted aimed flame directly toward player
+        this.spawnEnemyFlame();
+      } else if (patternRoll < 0.54) {
+        // Dual crossfire pincer from top-left and top-right diagonally
+        const leftX = 25 + Math.random() * 35;
+        const rightX = this.width - (25 + Math.random() * 35);
+        this.spawnEnemyFlame(leftX, -30, 48 + Math.random() * 30, 155 + Math.random() * 40, false);
+        this.spawnEnemyFlame(rightX, -30, -(48 + Math.random() * 30), 155 + Math.random() * 40, false);
+      } else if (patternRoll < 0.82) {
+        // Triple wave with a safe navigable gap
+        const safeIndex = Math.floor(Math.random() * 3);
+        const colWidth = (this.width - 50) / 3;
+        for (let c = 0; c < 3; c++) {
+          if (c !== safeIndex) {
+            const posX = 25 + c * colWidth + colWidth * 0.5;
+            this.spawnEnemyFlame(posX, -30, (Math.random() - 0.5) * 25, 160 + Math.random() * 40, false);
+          }
+        }
+      } else {
+        // High-density cross-volley: one targeted at player + one sweeping diagonal flanker
+        this.spawnEnemyFlame();
+        const flankX = Math.random() < 0.5 ? 25 : this.width - 25;
+        this.spawnEnemyFlame(flankX, -35, undefined, undefined, true);
+      }
     }
 
     // 8. Update bullets (moving UPWARDS)
@@ -763,25 +791,33 @@ export class GameEngine {
 
   /**
    * Spawn enemy fire attacks descending straight and diagonally from the top.
-   * "上や斜め上から敵の攻撃の炎がやってきて、これをよけていく。これにあたると、その場でゲームオーバー。"
+   * "敵の攻撃がもう少し多く。上や斜め上から敵の攻撃の炎がやってきて、これをよけていく。"
    */
-  private spawnEnemyFlame() {
-    const x = 20 + Math.random() * (this.width - 40);
-    const y = -35;
+  private spawnEnemyFlame(
+    customX?: number,
+    customY: number = -35,
+    customVx?: number,
+    customVy?: number,
+    aimAtPlayer: boolean = true
+  ) {
+    const x = customX !== undefined ? customX : (20 + Math.random() * (this.width - 40));
+    const y = customY;
 
     let vx = 0;
-    let vy = 140 + Math.random() * 50;
+    let vy = 150 + Math.random() * 50;
 
-    // 65% chance to aim diagonally towards player's position
-    if (Math.random() < 0.65) {
+    if (customVx !== undefined && customVy !== undefined) {
+      vx = customVx;
+      vy = customVy;
+    } else if (aimAtPlayer && Math.random() < 0.78) {
       const dx = this.player.x - x;
       const dy = this.player.y - y;
-      const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.28;
-      const speed = 150 + Math.random() * 55;
+      const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.22;
+      const speed = 160 + Math.random() * 65;
       vx = Math.cos(angle) * speed;
-      vy = Math.max(90, Math.sin(angle) * speed);
+      vy = Math.max(105, Math.sin(angle) * speed);
     } else {
-      vx = (Math.random() - 0.5) * 45;
+      vx = (Math.random() - 0.5) * 60;
     }
 
     this.enemyFlames.push({
@@ -790,7 +826,7 @@ export class GameEngine {
       y,
       vx,
       vy,
-      radius: 12 + Math.random() * 4,
+      radius: 11.5 + Math.random() * 4,
       rotSpeed: (Math.random() - 0.5) * 3,
       rotation: Math.random() * Math.PI * 2,
       pulsePhase: Math.random() * Math.PI * 2,
@@ -824,6 +860,11 @@ export class GameEngine {
         color: '#a7f3d0',
         life: 2.2,
       });
+    }
+
+    // Shadow retaliation: occasionally ejects an ember towards player when dispelled in upper half
+    if (Math.random() < 0.35 && shadow.y > 0 && shadow.y < this.height * 0.55) {
+      this.spawnEnemyFlame(shadow.x, shadow.y, undefined, undefined, true);
     }
   }
 
@@ -1030,6 +1071,29 @@ export class GameEngine {
 
     const pulse = Math.sin(f.pulsePhase) * 2.5;
     const r = f.radius + pulse;
+
+    // 0. Directional fiery tail plume
+    if (f.vy > 0 || Math.abs(f.vx) > 0) {
+      const trailLen = Math.min(32, Math.hypot(f.vx, f.vy) * 0.14);
+      const angle = Math.atan2(f.vy, f.vx) - f.rotation; // relative to rotated canvas
+      const tailX = -Math.cos(angle) * trailLen;
+      const tailY = -Math.sin(angle) * trailLen;
+
+      const tailGrad = ctx.createLinearGradient(0, 0, tailX, tailY);
+      tailGrad.addColorStop(0, 'rgba(249, 115, 22, 0.85)');
+      tailGrad.addColorStop(0.5, 'rgba(239, 68, 68, 0.55)');
+      tailGrad.addColorStop(1, 'rgba(124, 58, 237, 0)');
+
+      ctx.save();
+      ctx.strokeStyle = tailGrad;
+      ctx.lineWidth = r * 1.1;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // 1. Fiery outer demonic aura (screen mode)
     ctx.globalCompositeOperation = 'screen';

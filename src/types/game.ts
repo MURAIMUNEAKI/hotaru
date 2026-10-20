@@ -133,6 +133,12 @@ export interface FutureReport {
   year: string;
   newspaper_headline: string;
   sub_headline: string;
+  policy_theme?: string;
+  enacted_policies?: Array<{
+    title: string;
+    category: string;
+    summary: string;
+  }>;
   urban_report: string;
   citizens_voice: string;
   special_legacy_title: string;

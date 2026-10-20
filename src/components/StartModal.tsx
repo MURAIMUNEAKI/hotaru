@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Sparkles } from 'lucide-react';
+import { Play, Sparkles, Clock } from 'lucide-react';
 
 interface StartModalProps {
   onStartGame: () => void;
@@ -8,10 +8,11 @@ interface StartModalProps {
 export const StartModal: React.FC<StartModalProps> = ({ onStartGame }) => {
   return (
     <div className="absolute inset-0 z-30 bg-slate-950/92 backdrop-blur-md flex flex-col justify-between items-center p-6 text-white text-center overflow-y-auto">
-      {/* Top Catchphrase */}
-      <div className="pt-4 sm:pt-6 w-full max-w-sm">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/25 text-yellow-300 text-xs tracking-widest font-mono mb-3">
-          <Sparkles className="w-3.5 h-3.5 text-yellow-400" /> HOTARU
+      {/* Top Title & Catchphrase */}
+      <div className="pt-3 sm:pt-5 w-full max-w-sm">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/25 via-yellow-500/20 to-emerald-500/25 border border-yellow-400/40 text-yellow-200 text-xs sm:text-sm font-bold tracking-wide mb-2.5 shadow-md shadow-yellow-500/10">
+          <Clock className="w-4 h-4 text-emerald-300 shrink-0" />
+          <span>１分間で地域の未来を作ろう</span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-serif-title font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-emerald-300 leading-snug drop-shadow-sm">

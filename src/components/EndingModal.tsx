@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Sparkles,
-  Download,
   Share2,
   RotateCcw,
   Building,
@@ -10,12 +9,10 @@ import {
   Calendar,
   Layers,
   FileText,
-  Eye,
   Check,
   Flame,
 } from 'lucide-react';
 import { GameLog, FutureReport, LandmarkData } from '../types/game';
-import { renderFutureCityPostcard } from '../game/CityVisualizer';
 
 interface EndingModalProps {
   gameLog: GameLog;
@@ -28,12 +25,10 @@ export const EndingModal: React.FC<EndingModalProps> = ({
   rawLandmarks,
   onPlayAgain,
 }) => {
-  const [activeTab, setActiveTab] = useState<'visual' | 'report' | 'stats'>('visual');
+  const [activeTab, setActiveTab] = useState<'report' | 'stats'>('report');
   const [report, setReport] = useState<FutureReport | null>(null);
   const [loadingReport, setLoadingReport] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Fetch future report from server Gemini endpoint
   useEffect(() => {
@@ -63,37 +58,25 @@ export const EndingModal: React.FC<EndingModalProps> = ({
     };
   }, [gameLog]);
 
-  // Render Postcard Canvas when visual tab is active or report updates
-  useEffect(() => {
-    if (canvasRef.current) {
-      const lit = rawLandmarks.filter((l) => l.isLit);
-      renderFutureCityPostcard(canvasRef.current, {
-        districtName: gameLog.city_district,
-        totalLux: gameLog.total_lux,
-        litLandmarks: lit,
-        companionsRescued: gameLog.companions_rescued,
-        report: report || undefined,
-      });
-    }
-  }, [report, activeTab, rawLandmarks, gameLog]);
-
-  const handleDownloadImage = () => {
-    if (!canvasRef.current) return;
-    const link = document.createElement('a');
-    link.download = `hotaru_${gameLog.city_district}_2056.png`;
-    link.href = canvasRef.current.toDataURL('image/png');
-    link.click();
-  };
-
   const handleShare = async () => {
     const title = report?.special_legacy_title || '光の導き手';
     const litNames = gameLog.lit_landmarks.map((l) => l.name).join('・') || '全域の灯火';
-    const text = `スマホ向けエモーショナルシューティング『Hotaru』で30年後の街を照らしました！
-【獲得照度】: ${gameLog.total_lux.toLocaleString()} Lux
-【称号】: ${title}
-【点灯施設】: ${litNames}
-【救出仲間】: ${gameLog.companions_rescued}匹
-#Hotaru #Gemini #インディゲーム`;
+    const headline = report?.newspaper_headline || 'ホタルの光に導かれ再生した街';
+    const policy = report?.policy_theme || '光と命の循環都市基本計画';
+
+    const text = `【Hotaru 30年後未来特報レポート】
+『${gameLog.city_district}』
+称号: ${title}
+獲得照度: ${gameLog.total_lux.toLocaleString()} Lux
+点灯施設: ${litNames}
+救出仲間: ${gameLog.companions_rescued}匹
+
+■ ${headline}
+政策テーマ: ${policy}
+
+${report?.urban_report || ''}
+
+#Hotaru #Gemini #地域政策`;
 
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(text);
@@ -146,17 +129,6 @@ export const EndingModal: React.FC<EndingModalProps> = ({
       {/* Tabs */}
       <div className="flex items-center justify-center gap-1 bg-slate-900/90 p-1 rounded-2xl border border-white/10 max-w-sm mx-auto mb-4 w-full">
         <button
-          onClick={() => setActiveTab('visual')}
-          className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-            activeTab === 'visual'
-              ? 'bg-gradient-to-r from-yellow-500/20 to-emerald-500/20 text-yellow-300 border border-yellow-400/30'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Eye className="w-3.5 h-3.5" />
-          <span>未来都市アート</span>
-        </button>
-        <button
           onClick={() => setActiveTab('report')}
           className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
             activeTab === 'report'
@@ -165,7 +137,7 @@ export const EndingModal: React.FC<EndingModalProps> = ({
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
-          <span>30年後未来特報</span>
+          <span>30年後未来特報・政策</span>
         </button>
         <button
           onClick={() => setActiveTab('stats')}
@@ -176,62 +148,21 @@ export const EndingModal: React.FC<EndingModalProps> = ({
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>飛行ログ</span>
+          <span>飛行ログ・点灯施設</span>
         </button>
       </div>
 
-      {/* Tab 1: Future City Visual Art */}
-      {activeTab === 'visual' && (
-        <div className="flex-1 flex flex-col items-center">
-          <div className="w-full max-w-md aspect-[4/5] bg-slate-900 rounded-2xl overflow-hidden border border-white/15 shadow-2xl relative">
-            <canvas
-              ref={canvasRef}
-              width={640}
-              height={800}
-              className="w-full h-full object-cover"
-            />
-            {loadingReport && (
-              <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-center p-4">
-                  <Sparkles className="w-6 h-6 text-yellow-400 animate-spin" />
-                  <p className="text-xs text-yellow-200 font-sans-ui">
-                    Geminiが街の未来を編纂中...
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 w-full max-w-md mt-4">
-            <button
-              onClick={handleDownloadImage}
-              className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
-            >
-              <Download className="w-4 h-4 text-emerald-400" />
-              <span>ポストカードを保存</span>
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-sky-400" />}
-              <span>{copied ? 'コピー完了！' : '結果をシェア'}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 2: Gemini 30-Year Future Newspaper Chronicle */}
+      {/* Tab 1: Gemini 30-Year Future Newspaper Chronicle & Policy Report */}
       {activeTab === 'report' && (
         <div className="flex-1 max-w-md mx-auto w-full space-y-4">
           {loadingReport ? (
             <div className="py-20 flex flex-col items-center justify-center gap-3">
               <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
               <p className="text-sm text-yellow-200/90 font-serif-title">
-                Gemini 3.8 Flashが30年後の街の記録を生成しています...
+                Gemini 3.8 Flashが30年後の政策レポートを編纂中...
               </p>
               <p className="text-xs text-slate-400">
-                点灯した施設とスコアから政策レポートを構築中
+                照度と点灯施設から未来都市の歩みを生成しています
               </p>
             </div>
           ) : report ? (
@@ -261,6 +192,44 @@ export const EndingModal: React.FC<EndingModalProps> = ({
                   {report.special_legacy_title}
                 </span>
               </div>
+
+              {/* Enacted Municipal Policies */}
+              {report.policy_theme && (
+                <div className="bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/30 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+                    <span className="text-[11px] font-bold text-emerald-300 font-sans-ui flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                      <span>施行された都市再生政策</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400/80 font-mono">
+                      {report.policy_theme}
+                    </span>
+                  </div>
+
+                  {report.enacted_policies && report.enacted_policies.length > 0 && (
+                    <div className="space-y-2 pt-1">
+                      {report.enacted_policies.map((pol, pIdx) => (
+                        <div
+                          key={pIdx}
+                          className="bg-slate-950/70 p-2.5 rounded-lg border border-emerald-400/15 flex flex-col gap-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-yellow-200 font-serif-title">
+                              {pol.title}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">
+                              {pol.category}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-300 leading-relaxed font-sans-ui">
+                            {pol.summary}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Urban Report */}
               <div>
@@ -311,12 +280,23 @@ export const EndingModal: React.FC<EndingModalProps> = ({
                   </span>
                 </div>
               </div>
+
+              {/* Share report text button */}
+              <div className="pt-2">
+                <button
+                  onClick={handleShare}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-sky-400" />}
+                  <span>{copied ? 'レポート全文をコピーしました！' : '政策レポートをコピー・シェア'}</span>
+                </button>
+              </div>
             </div>
           ) : null}
         </div>
       )}
 
-      {/* Tab 3: Flight Stats & Lit Landmarks */}
+      {/* Tab 2: Flight Stats & Lit Landmarks */}
       {activeTab === 'stats' && (
         <div className="flex-1 max-w-md mx-auto w-full space-y-4">
           <div className="bg-slate-900/90 border border-white/10 rounded-2xl p-4 space-y-3">
